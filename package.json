@@ -1,0 +1,28 @@
+{
+  "name": "cozy-cinema-live",
+  "version": "1.0.0",
+  "description": "Interactive 2.5D Virtual Cinema & Music Lounge for TikTok Live Streams with AI Assistant",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "tiktok-live",
+    "interactive-stream",
+    "virtual-cinema",
+    "obs-overlay",
+    "tts",
+    "2.5d-cinema"
+  ],
+  "author": "Open Source Community",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "msedge-tts": "^1.4.3",
+    "tiktok-live-connector": "^1.1.8",
+    "ws": "^8.18.0"
+  }
+}

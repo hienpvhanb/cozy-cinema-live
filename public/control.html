@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cozy Cinema - Streamer Control Panel</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 30px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      margin-bottom: 24px;
+    }
+    .card-header {
+      background: rgba(255, 255, 255, 0.04);
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn-custom {
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .badge-status {
+      font-size: 14px;
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-1">🎬 Cozy Cinema Control Panel</h2>
+        <p class="text-secondary mb-0">Bảng điều khiển rạp chiếu phim ảo dành cho Streamer</p>
+      </div>
+      <div>
+        <a href="/overlay.html" target="_blank" class="btn btn-outline-info btn-custom">
+          📺 Mở Màn hình Overlay (OBS)
+        </a>
+      </div>
+    </div>
+
+    <!-- 1. Kết nối TikTok Live -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>🔗 1. KẾT NỐI TIKTOK LIVE</span>
+        <span id="tiktokBadge" class="badge bg-secondary badge-status">Chưa kết nối</span>
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <span class="input-group-text bg-dark text-light border-secondary">@</span>
+          <input type="text" id="tiktokUsername" class="form-control bg-dark text-light border-secondary" placeholder="Nhập username TikTok đang LIVE (ví dụ: khabylame)">
+          <button id="btnConnect" class="btn btn-primary btn-custom px-4">Kết nối Live</button>
+          <button id="btnDisconnect" class="btn btn-danger btn-custom px-4 d-none">Ngắt kết nối</button>
+        </div>
+        <small class="text-secondary d-block mt-2">
+          💡 Lưu ý: Tài khoản TikTok phải đang ở trạng thái <strong>LIVE</strong> thì mới kết nối thành công. Nếu chưa phát trực tiếp, hãy dùng bộ <strong>Mô phỏng (Simulator)</strong> phía dưới để test!
+        </small>
+      </div>
+    </div>
+
+    <!-- 2. Giả lập Tương tác (Simulator Test Panel) -->
+    <div class="card border-warning">
+      <div class="card-header text-warning fw-bold">
+        🎮 2. BỘ GIẢ LẬP TƯƠNG TÁC (TEST OFFLINE KHÔNG CẦN LIVE)
+      </div>
+      <div class="card-body">
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <button class="btn btn-outline-light w-100 btn-custom" onclick="simEvent('join_or_chat', { comment: 'Chào cả rạp!' })">
+              👤 Thêm 1 người xem
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-info w-100 btn-custom" onclick="simEvent('join_or_chat', { role: 'cat', comment: 'meo meo xin chào' })">
+              🐱 Người xem diện mạo Mèo
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-success w-100 btn-custom" onclick="simEvent('join_or_chat', { snack: 'popcorn', comment: '!bap rang bo ngon qua' })">
+              🍿 Người xem gọi Bắp Rang
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-danger w-100 btn-custom" onclick="simEvent('like')">
+              ❤️ Thả tim dồn dập (Like)
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-warning w-100 btn-custom" onclick="simEvent('gift', { giftName: 'Bỏng Ngô Hoàng Gia' })">
+              🎁 Tặng Quà VIP (Có AI xướng danh)
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 btn-custom" onclick="addBulkUsers()">
+              👥 Thêm 6 khán giả cùng lúc
+            </button>
+          </div>
+        </div>
+
+        <div class="text-end">
+          <button class="btn btn-outline-secondary btn-sm" onclick="resetSeats()">
+            🔄 Dọn dẹp rạp (Reset toàn bộ ghế)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Quản lý Phim & Video đang chiếu -->
+    <div class="card">
+      <div class="card-header">
+        🎬 3. ĐỔI NỘI DUNG CHIẾU TRÊN MÀN HÌNH RẠP
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-md-4">
+            <button class="btn btn-dark w-100 border-secondary text-start" onclick="changeMedia('Camping Mưa Rừng Chill ASMR 15 Phút', '/media/Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4')">
+              🌧️ Camping Mưa Rừng ASMR
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-dark w-100 border-secondary text-start" onclick="changeMedia('MV Giá Mà Hôm Ấy (Phong Cảnh Lyrics)', '/media/MV_Gia_Ma_Hom_Ay_Phong_Canh_Lyrics.mp4')">
+              🎵 MV Giá Mà Hôm Ấy (Lyrics)
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-dark w-100 border-secondary text-start" onclick="changeMedia('MV Cảm Ơn Anh Vì Đã Từng', '/media/MV_Julia_Cam_On_Anh_Vi_Da_Tung.mp4')">
+              🎸 MV Cảm Ơn Anh Vì Đã Từng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
+
+    const tiktokBadge = document.getElementById('tiktokBadge');
+    const tiktokUsernameInput = document.getElementById('tiktokUsername');
+    const btnConnect = document.getElementById('btnConnect');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'TIKTOK_STATUS') {
+        if (data.payload.connected) {
+          tiktokBadge.className = 'badge bg-success badge-status';
+          tiktokBadge.textContent = 'Đang LIVE: @' + data.payload.username;
+          btnConnect.classList.add('d-none');
+          btnDisconnect.classList.remove('d-none');
+        } else {
+          tiktokBadge.className = 'badge bg-secondary badge-status';
+          tiktokBadge.textContent = data.payload.error ? 'Lỗi: ' + data.payload.error : 'Chưa kết nối';
+          btnConnect.classList.remove('d-none');
+          btnDisconnect.classList.add('d-none');
+        }
+      }
+    };
+
+    btnConnect.onclick = () => {
+      const username = tiktokUsernameInput.value.trim().replace('@', '');
+      if (!username) return alert('Vui lòng nhập TikTok username!');
+      ws.send(JSON.stringify({ type: 'CONNECT_TIKTOK', payload: { username } }));
+    };
+
+    btnDisconnect.onclick = () => {
+      ws.send(JSON.stringify({ type: 'DISCONNECT_TIKTOK' }));
+    };
+
+    function simEvent(action, extra = {}) {
+      ws.send(JSON.stringify({
+        type: 'SIMULATE_EVENT',
+        payload: { action, ...extra }
+      }));
+    }
+
+    function addBulkUsers() {
+      const names = ['Thanh_Hang', 'Quang_Anh', 'Bao_Bao', 'Huyen_My', 'Duy_Khang', 'Thu_Trang'];
+      const roles = ['normal', 'cat', 'female', 'hoodie', 'glasses', 'normal'];
+      const snacks = ['popcorn', 'drink', null, 'beer', 'popcorn', null];
+
+      names.forEach((name, i) => {
+        setTimeout(() => {
+          simEvent('join_or_chat', { username: name, role: roles[i], snack: snacks[i] });
+        }, i * 300);
+      });
+    }
+
+    function resetSeats() {
+      if (confirm('Bạn có chắc muốn dọn sạch tất cả khán giả trong rạp không?')) {
+        ws.send(JSON.stringify({ type: 'RESET_SEATS' }));
+      }
+    }
+
+    function changeMedia(title, src) {
+      ws.send(JSON.stringify({
+        type: 'CHANGE_MEDIA',
+        payload: { title, src }
+      }));
+    }
+  </script>
+</body>
+</html>

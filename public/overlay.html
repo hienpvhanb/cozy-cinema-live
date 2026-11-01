@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cozy Cinema - TikTok Live Overlay 9:16</title>
+  <link rel="stylesheet" href="css/cinema.css">
+</head>
+<body>
+
+  <div class="cinema-container">
+    <!-- 1. Thanh Header & Ticker rạp -->
+    <header class="cinema-header">
+      <div class="logo-badge">
+        <span class="logo-icon">🎬</span>
+        <div class="logo-text">
+          <h1>COZY CINEMA</h1>
+          <p id="streamerRoom">Phòng chiếu số 1 • TikTok Live</p>
+        </div>
+      </div>
+      <div class="live-status-pill">
+        <span class="live-dot"></span>
+        <span id="liveStatusText">ON AIR</span>
+      </div>
+    </header>
+
+    <!-- 2. Màn hình Chiếu Phim (The Movie Screen) -->
+    <section class="screen-section">
+      <div class="projector-glow"></div>
+      <div class="screen-frame">
+        <video id="moviePlayer" src="/media/Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4" autoplay loop muted playsinline></video>
+      </div>
+      <div class="screen-meta">
+        <div class="now-playing-pill">
+          <span>🎵 Đang chiếu:</span>
+          <strong id="movieTitle">Camping Mưa Rừng Chill ASMR (No-Copyright)</strong>
+        </div>
+        <div class="now-playing-pill" style="color: #fbbf24;">
+          <span>🍿 Vé rạp:</span>
+          <strong>Miễn Phí</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Không gian Rạp 2.5D & Hàng ghế khán giả -->
+    <main class="theater-floor">
+      <canvas id="cinemaCanvas"></canvas>
+    </main>
+
+    <!-- 4. Popup Xướng Danh Quà Tặng (Gift Ceremony) -->
+    <div id="giftPopup" class="gift-popup">
+      <div class="gift-icon-anim">🍿✨</div>
+      <h2 id="giftSender">@HoangNam Đã Tặng Quà!</h2>
+      <p id="giftMessage">Bao trọn bắp nước cho cả rạp chiếu phim</p>
+    </div>
+
+    <!-- 5. Ticker Hướng dẫn tương tác cho người xem -->
+    <footer class="cinema-ticker-bar">
+      <div class="ticker-title">Cách tham gia</div>
+      <div class="marquee">
+        <span>
+          💬 Bình luận bất kỳ để nhận 1 ghế ngồi trong rạp • 
+          👗 Gõ: "nam", "nu", "meo", "hoodie", "kinh" để đổi diện mạo • 
+          🍿 Gõ: "!bap", "!nuoc", "!bia" để gọi đồ ăn vặt • 
+          ❤️ Thả tim để vỗ tay & tung hoa • 
+          🎁 Tặng quà để lên hàng ghế VIP & được AI xướng tên!
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { CinemaEngine } from './js/cinema-engine.js';
+
+    const canvas = document.getElementById('cinemaCanvas');
+    const engine = new CinemaEngine(canvas);
+    engine.startRenderLoop();
+
+    const moviePlayer = document.getElementById('moviePlayer');
+    const movieTitle = document.getElementById('movieTitle');
+    const giftPopup = document.getElementById('giftPopup');
+    const giftSender = document.getElementById('giftSender');
+    const giftMessage = document.getElementById('giftMessage');
+    const liveStatusText = document.getElementById('liveStatusText');
+    const streamerRoom = document.getElementById('streamerRoom');
+
+    // Kết nối WebSocket tới Server
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('[WebSocket] Đã kết nối tới Cinema Server');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'INIT_STATE') {
+          engine.setSeats(data.payload.seats);
+          if (data.payload.nowPlaying) {
+            movieTitle.textContent = data.payload.nowPlaying.title;
+            if (data.payload.nowPlaying.src) moviePlayer.src = data.payload.nowPlaying.src;
+          }
+        } 
+        else if (data.type === 'SEAT_UPDATE') {
+          engine.updateSeat(data.payload.seat);
+        } 
+        else if (data.type === 'USER_LIKE') {
+          // Thả tim ngẫu nhiên vào ghế của người like hoặc ghế bất kỳ
+          const seat = engine.seats.find(s => s.occupiedBy && s.occupiedBy.uniqueId === data.payload.uniqueId);
+          if (seat) engine.spawnHeartAtSeat(seat.id);
+          else engine.spawnHeartAtSeat(Math.floor(Math.random() * 36) + 1);
+        } 
+        else if (data.type === 'GIFT_EVENT') {
+          engine.updateSeat(data.payload.seat);
+          engine.playChimeSound();
+
+          // Hiển thị Popup xướng danh
+          giftSender.textContent = `@${data.payload.giftInfo.user.nickname} Đã Tặng ${data.payload.giftInfo.giftName}!`;
+          giftMessage.textContent = `Nâng cấp lên hàng ghế VIP • Cả rạp nhiệt liệt vỗ tay!`;
+          giftPopup.classList.add('active');
+
+          setTimeout(() => {
+            giftPopup.classList.remove('active');
+          }, 4500);
+
+          // Phát âm thanh AI TTS
+          if (data.payload.ttsAudio) {
+            engine.queueTTSAudio(data.payload.ttsAudio);
+          }
+        } 
+        else if (data.type === 'MEDIA_CHANGED') {
+          movieTitle.textContent = data.payload.title;
+          if (data.payload.src) moviePlayer.src = data.payload.src;
+        } 
+        else if (data.type === 'SEATS_RESET') {
+          engine.setSeats(data.payload);
+        } 
+        else if (data.type === 'TIKTOK_STATUS') {
+          if (data.payload.connected) {
+            liveStatusText.textContent = 'TIKTOK LIVE';
+            streamerRoom.textContent = `@${data.payload.username} • Phòng chiếu trực tiếp`;
+          } else {
+            liveStatusText.textContent = 'OFFLINE';
+            streamerRoom.textContent = `Chưa kết nối TikTok Live`;
+          }
+        }
+      } catch (err) {
+        console.error('WS parse error:', err);
+      }
+    };
+
+    // Bật tiếng video khi click lần đầu (quy tắc Autoplay của trình duyệt)
+    document.addEventListener('click', () => {
+      if (moviePlayer.muted) {
+        moviePlayer.muted = false;
+        moviePlayer.play().catch(() => {});
+      }
+    }, { once: true });
+  </script>
+</body>
+</html>
