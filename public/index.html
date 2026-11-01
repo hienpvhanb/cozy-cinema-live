@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cozy Cinema - Standalone Interactive Preview</title>
+  <link rel="stylesheet" href="css/cinema.css">
+  <style>
+    /* Bố cục chia đôi màn hình khi xem thử nghiệm trực tiếp */
+    .preview-wrapper {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      background: #090d16;
+      overflow: hidden;
+    }
+    .preview-left {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      background: #020408;
+    }
+    .preview-right {
+      width: 420px;
+      background: #111827;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .sim-card {
+      background: #1f2937;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .sim-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 12px;
+    }
+    .sim-btn {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-blue { background: #0284c7; color: white; }
+    .btn-blue:hover { background: #0369a1; }
+    .btn-green { background: #059669; color: white; }
+    .btn-green:hover { background: #047857; }
+    .btn-red { background: #e11d48; color: white; }
+    .btn-red:hover { background: #be123c; }
+    .btn-gold { background: #d97706; color: white; }
+    .btn-gold:hover { background: #b45309; }
+    .btn-dark { background: #374151; color: #f3f4f6; }
+    .btn-dark:hover { background: #4b5563; }
+    .stats-box {
+      font-size: 14px;
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-wrapper">
+    <!-- CỘT TRÁI: MÀN HÌNH RẠP CHIẾU 9:16 -->
+    <div class="preview-left">
+      <div class="cinema-container">
+        <!-- Header -->
+        <header class="cinema-header">
+          <div class="logo-badge">
+            <span class="logo-icon">🎬</span>
+            <div class="logo-text">
+              <h1>COZY CINEMA</h1>
+              <p>Rạp Chiếu Phim Chill 2.5D</p>
+            </div>
+          </div>
+          <div class="live-status-pill">
+            <span class="live-dot"></span>
+            <span>DEMO MODE</span>
+          </div>
+        </header>
+
+        <!-- Màn hình chiếu video -->
+        <section class="screen-section">
+          <div class="projector-glow"></div>
+          <div class="screen-frame">
+            <video id="moviePlayer" src="../../Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4" autoplay loop muted playsinline></video>
+            <!-- Canvas dự phòng khi chưa tải được video -->
+            <canvas id="ambientFallbackCanvas" style="display: none; width: 100%; height: 100%;"></canvas>
+          </div>
+          <div class="screen-meta">
+            <div class="now-playing-pill">
+              <span>🎵 Đang chiếu:</span>
+              <strong id="movieTitle">Camping Mưa Rừng Chill ASMR</strong>
+            </div>
+            <div class="now-playing-pill" style="color: #fbbf24;">
+              <span>🍿 Vé rạp:</span>
+              <strong id="seatCountText">0/36 Ghế</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Không gian Rạp 2.5D -->
+        <main class="theater-floor">
+          <canvas id="cinemaCanvas"></canvas>
+        </main>
+
+        <!-- Popup Quà Tặng -->
+        <div id="giftPopup" class="gift-popup">
+          <div class="gift-icon-anim">🍿👑</div>
+          <h2 id="giftSender">@HoangNam Tặng Quà!</h2>
+          <p id="giftMessage">Bao trọn rạp chiếu phim • Nâng cấp VIP!</p>
+        </div>
+
+        <!-- Ticker Bar -->
+        <footer class="cinema-ticker-bar">
+          <div class="ticker-title">Cách tham gia</div>
+          <div class="marquee">
+            <span>
+              💬 Gõ bình luận để vào ghế • 
+              🐱 Gõ: "meo", "nu", "hoodie", "kinh" đổi skin • 
+              🍿 Gõ: "!bap", "!nuoc", "!bia" để ăn uống • 
+              ❤️ Bấm thả tim để vỗ tay • 
+              🎁 Tặng quà để lên hàng ghế VIP!
+            </span>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- CỘT PHẢI: BẢNG TEST GIẢ LẬP TRỰC TIẾP -->
+    <div class="preview-right">
+      <div>
+        <h2 style="font-size: 20px; font-weight: 800; color: #f8fafc; margin-bottom: 4px;">🎮 Bảng Thử Nghiệm</h2>
+        <p style="font-size: 13px; color: #94a3b8; margin: 0;">Bấm các nút dưới đây để xem trực tiếp hiệu ứng trên rạp chiếu bên trái.</p>
+      </div>
+
+      <div class="sim-card">
+        <h3>1. Thêm Khán Giả Vào Rạp</h3>
+        <button class="sim-btn btn-blue" onclick="demoAddUser('normal')">
+          👤 Thêm 1 khán giả thường
+        </button>
+        <button class="sim-btn btn-blue" onclick="demoAddUser('cat')">
+          🐱 Khán giả diện mạo Mèo
+        </button>
+        <button class="sim-btn btn-blue" onclick="demoAddUser('female')">
+          🎀 Khán giả Nữ nơ hồng
+        </button>
+        <button class="sim-btn btn-blue" onclick="demoAddUser('hoodie')">
+          🎧 Khán giả Áo Hoodie Chill
+        </button>
+        <button class="sim-btn btn-blue" onclick="demoAddUser('glasses')">
+          👓 Khán giả Kính Tri Thức
+        </button>
+      </div>
+
+      <div class="sim-card">
+        <h3>2. Tương Tác Bắp Nước & Cảm Xúc</h3>
+        <button class="sim-btn btn-green" onclick="demoAddSnack('popcorn')">
+          🍿 Gọi Bắp Rang Bơ
+        </button>
+        <button class="sim-btn btn-green" onclick="demoAddSnack('drink')">
+          🥤 Gọi Ly Nước Ngọt / Trà Sữa
+        </button>
+        <button class="sim-btn btn-red" onclick="demoLikeBurst()">
+          ❤️ Thả Tim Bay Rực Rỡ (Like)
+        </button>
+      </div>
+
+      <div class="sim-card">
+        <h3>3. Quà Tặng & Hiệu Ứng Lớn</h3>
+        <button class="sim-btn btn-gold" onclick="demoGiftVIP()">
+          👑 Tặng Quà VIP (Xướng danh & Chuông)
+        </button>
+        <button class="sim-btn btn-dark" onclick="demoFillAllSeats()">
+          👥 Lấp Đầy Kín 36 Ghế Rạp
+        </button>
+        <button class="sim-btn btn-dark" style="color: #f87171;" onclick="demoResetSeats()">
+          🔄 Dọn Sạch Toàn Bộ Ghế
+        </button>
+      </div>
+
+      <div class="sim-card">
+        <h3>🎬 4. Đổi Video / MV Đang Chiếu</h3>
+        <button class="sim-btn btn-dark" onclick="changeDemoVideo('Camping Mưa Rừng ASMR', '../../Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4')">
+          🌧️ Camping Mưa Rừng 15 Phút
+        </button>
+        <button class="sim-btn btn-dark" onclick="changeDemoVideo('MV Giá Mà Hôm Ấy (Lyrics)', '../../MV_Gia_Ma_Hom_Ay_Phong_Canh_Lyrics.mp4')">
+          🎵 MV Giá Mà Hôm Ấy (Lyrics)
+        </button>
+        <button class="sim-btn btn-dark" onclick="changeDemoVideo('MV Cảm Ơn Anh Vì Đã Từng', '../../MV_Julia_Cam_On_Anh_Vi_Da_Tung.mp4')">
+          🎸 MV Cảm Ơn Anh Vì Đã Từng
+        </button>
+        <label class="sim-btn btn-blue" style="cursor: pointer; margin-top: 6px;">
+          📁 Chọn video khác từ máy tính...
+          <input type="file" id="localVideoPicker" accept="video/*" style="display: none;">
+        </label>
+      </div>
+
+      <div class="stats-box">
+        💡 <strong>Mẹo:</strong> Nhấp vào màn hình một lần để kích hoạt âm thanh chuông rạp và âm thanh video.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { CinemaEngine } from './js/cinema-engine.js';
+
+    const canvas = document.getElementById('cinemaCanvas');
+    const engine = new CinemaEngine(canvas);
+
+    // Khởi tạo 36 ghế trống
+    let localSeats = Array.from({ length: 36 }, (_, i) => ({
+      id: i + 1,
+      row: String.fromCharCode(65 + Math.floor(i / 9)),
+      col: (i % 9) + 1,
+      occupiedBy: null
+    }));
+
+    engine.setSeats(localSeats);
+    engine.startRenderLoop();
+
+    const giftPopup = document.getElementById('giftPopup');
+    const giftSender = document.getElementById('giftSender');
+    const seatCountText = document.getElementById('seatCountText');
+
+    function updateCounter() {
+      const occupied = localSeats.filter(s => s.occupiedBy).length;
+      seatCountText.textContent = `${occupied}/36 Ghế`;
+    }
+
+    const randomNicknames = [
+      'Minh_Khoa', 'Hoang_Yen', 'Cyber_Pug', 'Lofi_Girl', 'Gamer_99',
+      'Thanh_Hang', 'Quang_Anh', 'Bao_Bao', 'Huyen_My', 'Duy_Khang'
+    ];
+
+    window.demoAddUser = (role) => {
+      const emptySeats = localSeats.filter(s => !s.occupiedBy);
+      if (emptySeats.length === 0) {
+        alert('Rạp đã kín 36 ghế! Hãy bấm nút Dọn Sạch Ghế để test lại nhé.');
+        return;
+      }
+      const seat = emptySeats[Math.floor(Math.random() * emptySeats.length)];
+      const name = randomNicknames[Math.floor(Math.random() * randomNicknames.length)] + '_' + Math.floor(Math.random() * 99);
+
+      seat.occupiedBy = {
+        uniqueId: name.toLowerCase(),
+        nickname: name,
+        role: role,
+        snack: null,
+        isVip: false,
+        joinedAt: Date.now()
+      };
+
+      engine.updateSeat(seat);
+      updateCounter();
+    };
+
+    window.demoAddSnack = (snackType) => {
+      const occupiedSeats = localSeats.filter(s => s.occupiedBy);
+      if (occupiedSeats.length === 0) {
+        alert('Chưa có khán giả nào ngồi trong rạp! Hãy thêm khán giả trước.');
+        return;
+      }
+      const seat = occupiedSeats[Math.floor(Math.random() * occupiedSeats.length)];
+      seat.occupiedBy.snack = snackType;
+      engine.updateSeat(seat);
+    };
+
+    window.demoLikeBurst = () => {
+      for (let i = 0; i < 15; i++) {
+        setTimeout(() => {
+          engine.spawnHeartAtSeat(Math.floor(Math.random() * 36) + 1);
+        }, i * 60);
+      }
+    };
+
+    window.demoGiftVIP = () => {
+      const emptyOrOccupied = localSeats[Math.floor(Math.random() * 9)]; // Hàng ghế đầu
+      const name = 'Đại_Gia_' + Math.floor(Math.random() * 999);
+
+      emptyOrOccupied.occupiedBy = {
+        uniqueId: name.toLowerCase(),
+        nickname: name,
+        role: 'hoodie',
+        snack: 'popcorn',
+        isVip: true,
+        joinedAt: Date.now()
+      };
+
+      engine.updateSeat(emptyOrOccupied);
+      engine.playChimeSound();
+      updateCounter();
+
+      giftSender.textContent = `@${name} Đã Tặng Quà Khủng!`;
+      giftPopup.classList.add('active');
+      setTimeout(() => {
+        giftPopup.classList.remove('active');
+      }, 4000);
+    };
+
+    window.demoFillAllSeats = () => {
+      const roles = ['normal', 'cat', 'female', 'hoodie', 'glasses'];
+      const snacks = ['popcorn', 'drink', 'beer', null];
+
+      localSeats.forEach((seat, idx) => {
+        if (!seat.occupiedBy) {
+          const name = randomNicknames[idx % randomNicknames.length] + '_' + idx;
+          seat.occupiedBy = {
+            uniqueId: name.toLowerCase(),
+            nickname: name,
+            role: roles[Math.floor(Math.random() * roles.length)],
+            snack: snacks[Math.floor(Math.random() * snacks.length)],
+            isVip: idx < 3, // 3 ghế đầu là VIP
+            joinedAt: Date.now()
+          };
+          engine.updateSeat(seat);
+        }
+      });
+      updateCounter();
+    };
+
+    window.demoResetSeats = () => {
+      localSeats.forEach(s => s.occupiedBy = null);
+      engine.setSeats(localSeats);
+      updateCounter();
+    };
+
+    window.changeDemoVideo = (title, src) => {
+      const video = document.getElementById('moviePlayer');
+      const titleElem = document.getElementById('movieTitle');
+      titleElem.textContent = title;
+      video.src = src;
+      video.play().catch(() => {});
+    };
+
+    const picker = document.getElementById('localVideoPicker');
+    if (picker) {
+      picker.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          window.changeDemoVideo(file.name, url);
+        }
+      });
+    }
+
+    // Tự động vẽ hoạt họa lofi nếu video gặp sự cố
+    const movieVideo = document.getElementById('moviePlayer');
+    const fallbackCanvas = document.getElementById('ambientFallbackCanvas');
+    if (movieVideo && fallbackCanvas) {
+      movieVideo.onerror = () => {
+        movieVideo.style.display = 'none';
+        fallbackCanvas.style.display = 'block';
+        startAmbientAnimation(fallbackCanvas);
+      };
+    }
+
+    function startAmbientAnimation(cvs) {
+      const c = cvs.getContext('2d');
+      cvs.width = cvs.parentElement.clientWidth || 600;
+      cvs.height = cvs.parentElement.clientHeight || 350;
+      let stars = Array.from({ length: 60 }, () => ({
+        x: Math.random() * cvs.width,
+        y: Math.random() * cvs.height,
+        r: Math.random() * 2,
+        alpha: Math.random()
+      }));
+
+      function draw() {
+        c.fillStyle = '#0a0e17';
+        c.fillRect(0, 0, cvs.width, cvs.height);
+        stars.forEach(s => {
+          c.fillStyle = `rgba(147, 197, 253, ${s.alpha})`;
+          c.beginPath();
+          c.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          c.fill();
+          s.alpha += (Math.random() - 0.5) * 0.05;
+          if (s.alpha < 0.2) s.alpha = 0.2;
+          if (s.alpha > 0.9) s.alpha = 0.9;
+        });
+        c.fillStyle = '#fbbf24';
+        c.font = 'bold 22px sans-serif';
+        c.textAlign = 'center';
+        c.fillText('✨ Cozy Cinema Chill Room ✨', cvs.width / 2, cvs.height / 2);
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // Bật tiếng khi click lần đầu
+    document.addEventListener('click', () => {
+      const video = document.getElementById('moviePlayer');
+      if (video && video.muted) {
+        video.muted = false;
+        video.play().catch(() => {});
+      }
+    }, { once: true });
+  </script>
+</body>
+</html>

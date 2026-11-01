@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,17 +28,10 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare Public Directory
-        run: |
-          mkdir -p _site
-          cp -r public/* _site/
-          # Đổi tên standalone.html thành index.html để khi vào trang web là thấy ngay bản demo
-          cp public/standalone.html _site/index.html
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '_site'
+          path: './public'
 
       - name: Deploy to GitHub Pages
         id: deployment
