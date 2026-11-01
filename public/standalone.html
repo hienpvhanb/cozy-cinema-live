@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cozy Cinema - Standalone Interactive Preview</title>
   <link rel="stylesheet" href="css/cinema.css">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     /* Bố cục chia đôi màn hình khi xem thử nghiệm trực tiếp */
     .preview-wrapper {
@@ -353,9 +354,8 @@
 
     function parseYouTubeId(url) {
       if (!url) return null;
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/|shorts\/))([\w-]{11})/);
+      return match ? match[1] : null;
     }
 
     window.changeDemoVideo = (title, src) => {

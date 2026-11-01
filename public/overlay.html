@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cozy Cinema - TikTok Live Overlay 9:16</title>
   <link rel="stylesheet" href="css/cinema.css">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
 
@@ -84,30 +85,68 @@
 
     function parseYouTubeId(url) {
       if (!url) return null;
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/|shorts\/))([\w-]{11})/);
+      return match ? match[1] : null;
     }
+
+    let hlsInstance = null;
 
     function applyMedia(media) {
       if (!media || !media.src) return;
+      const src = media.src.trim();
       movieTitle.textContent = media.title || 'Đang Chiếu';
 
-      const ytId = parseYouTubeId(media.src);
+      const ytId = parseYouTubeId(src);
+
+      // 1. Trường hợp link YouTube
       if (ytId) {
-        // Dạng YouTube Embed
+        if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
         moviePlayer.pause();
         moviePlayer.style.display = 'none';
         youtubePlayer.style.display = 'block';
-        youtubePlayer.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=0&controls=0&loop=1&playlist=${ytId}&enablejsapi=1`;
-      } else {
-        // Dạng Video MP4/Web trực tiếp hoặc file cục bộ
+        // Thêm autoplay=1 và cho phép phát
+        youtubePlayer.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=1&loop=1&playlist=${ytId}&enablejsapi=1`;
+        return;
+      }
+
+      // 2. Trường hợp luồng HLS (.m3u8) từ web phim / IPTV
+      if (src.includes('.m3u8')) {
         youtubePlayer.src = '';
         youtubePlayer.style.display = 'none';
         moviePlayer.style.display = 'block';
-        moviePlayer.src = media.src;
-        moviePlayer.play().catch(() => {});
+
+        if (window.Hls && Hls.isSupported()) {
+          if (hlsInstance) hlsInstance.destroy();
+          hlsInstance = new Hls();
+          hlsInstance.loadSource(src);
+          hlsInstance.attachMedia(moviePlayer);
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+            moviePlayer.play().catch(() => {});
+          });
+        } else if (moviePlayer.canPlayType('application/vnd.apple.mpegurl')) {
+          moviePlayer.src = src;
+          moviePlayer.play().catch(() => {});
+        }
+        return;
       }
+
+      // 3. Trường hợp link Embed iframe từ các web video khác
+      if (src.includes('/embed/') || src.includes('player.') || src.includes('iframe')) {
+        if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+        moviePlayer.pause();
+        moviePlayer.style.display = 'none';
+        youtubePlayer.style.display = 'block';
+        youtubePlayer.src = src;
+        return;
+      }
+
+      // 4. Trường hợp video file trực tiếp (.mp4, .webm) hoặc file trong máy
+      if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+      youtubePlayer.src = '';
+      youtubePlayer.style.display = 'none';
+      moviePlayer.style.display = 'block';
+      moviePlayer.src = src;
+      moviePlayer.play().catch(() => {});
     }
     const giftSender = document.getElementById('giftSender');
     const giftMessage = document.getElementById('giftMessage');

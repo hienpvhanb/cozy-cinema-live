@@ -49,6 +49,18 @@
       </div>
     </div>
 
+    <!-- Mini Preview Screen ngay trên Bảng điều khiển -->
+    <div class="card border-primary mb-4">
+      <div class="card-header bg-primary bg-opacity-25 text-info d-flex justify-content-between align-items-center">
+        <span class="fw-bold">📺 MÀN HÌNH THEO DÕI NỘI DUNG ĐANG CHIẾU (PREVIEW)</span>
+        <span id="previewTitle" class="badge bg-dark border border-secondary text-light">Đang tải...</span>
+      </div>
+      <div class="card-body p-0 text-center bg-black" style="min-height: 280px; position: relative;">
+        <video id="ctrlPreviewVideo" style="max-height: 350px; width: 100%; object-fit: contain; display: block;" autoplay loop muted playsinline></video>
+        <iframe id="ctrlPreviewYt" style="display: none; width: 100%; height: 350px; border: none;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+    </div>
+
     <!-- 1. Kết nối TikTok Live -->
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -190,10 +202,44 @@
     const tiktokUsernameInput = document.getElementById('tiktokUsername');
     const btnConnect = document.getElementById('btnConnect');
     const btnDisconnect = document.getElementById('btnDisconnect');
+    const previewTitle = document.getElementById('previewTitle');
+    const ctrlPreviewVideo = document.getElementById('ctrlPreviewVideo');
+    const ctrlPreviewYt = document.getElementById('ctrlPreviewYt');
+
+    function parseYouTubeId(url) {
+      if (!url) return null;
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/|shorts\/))([\w-]{11})/);
+      return match ? match[1] : null;
+    }
+
+    function updatePreviewPlayer(media) {
+      if (!media || !media.src) return;
+      previewTitle.textContent = media.title || 'Đang phát';
+
+      const ytId = parseYouTubeId(media.src);
+      if (ytId) {
+        ctrlPreviewVideo.pause();
+        ctrlPreviewVideo.style.display = 'none';
+        ctrlPreviewYt.style.display = 'block';
+        ctrlPreviewYt.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1&loop=1&playlist=${ytId}`;
+      } else {
+        ctrlPreviewYt.src = '';
+        ctrlPreviewYt.style.display = 'none';
+        ctrlPreviewVideo.style.display = 'block';
+        ctrlPreviewVideo.src = media.src;
+        ctrlPreviewVideo.play().catch(() => {});
+      }
+    }
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === 'TIKTOK_STATUS') {
+      if (data.type === 'INIT_STATE') {
+        if (data.payload.nowPlaying) updatePreviewPlayer(data.payload.nowPlaying);
+      }
+      else if (data.type === 'MEDIA_CHANGED') {
+        updatePreviewPlayer(data.payload);
+      }
+      else if (data.type === 'TIKTOK_STATUS') {
         if (data.payload.connected) {
           tiktokBadge.className = 'badge bg-success badge-status';
           tiktokBadge.textContent = 'Đang LIVE: @' + data.payload.username;
