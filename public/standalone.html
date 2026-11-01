@@ -101,7 +101,9 @@
         <section class="screen-section">
           <div class="projector-glow"></div>
           <div class="screen-frame">
-            <video id="moviePlayer" src="../Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4" autoplay loop muted playsinline></video>
+            <video id="moviePlayer" src="../../Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4" autoplay loop muted playsinline></video>
+            <!-- Canvas dự phòng khi chưa tải được video -->
+            <canvas id="ambientFallbackCanvas" style="display: none; width: 100%; height: 100%;"></canvas>
           </div>
           <div class="screen-meta">
             <div class="now-playing-pill">
@@ -193,6 +195,23 @@
         <button class="sim-btn btn-dark" style="color: #f87171;" onclick="demoResetSeats()">
           🔄 Dọn Sạch Toàn Bộ Ghế
         </button>
+      </div>
+
+      <div class="sim-card">
+        <h3>🎬 4. Đổi Video / MV Đang Chiếu</h3>
+        <button class="sim-btn btn-dark" onclick="changeDemoVideo('Camping Mưa Rừng ASMR', '../../Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4')">
+          🌧️ Camping Mưa Rừng 15 Phút
+        </button>
+        <button class="sim-btn btn-dark" onclick="changeDemoVideo('MV Giá Mà Hôm Ấy (Lyrics)', '../../MV_Gia_Ma_Hom_Ay_Phong_Canh_Lyrics.mp4')">
+          🎵 MV Giá Mà Hôm Ấy (Lyrics)
+        </button>
+        <button class="sim-btn btn-dark" onclick="changeDemoVideo('MV Cảm Ơn Anh Vì Đã Từng', '../../MV_Julia_Cam_On_Anh_Vi_Da_Tung.mp4')">
+          🎸 MV Cảm Ơn Anh Vì Đã Từng
+        </button>
+        <label class="sim-btn btn-blue" style="cursor: pointer; margin-top: 6px;">
+          📁 Chọn video khác từ máy tính...
+          <input type="file" id="localVideoPicker" accept="video/*" style="display: none;">
+        </label>
       </div>
 
       <div class="stats-box">
@@ -323,6 +342,68 @@
       engine.setSeats(localSeats);
       updateCounter();
     };
+
+    window.changeDemoVideo = (title, src) => {
+      const video = document.getElementById('moviePlayer');
+      const titleElem = document.getElementById('movieTitle');
+      titleElem.textContent = title;
+      video.src = src;
+      video.play().catch(() => {});
+    };
+
+    const picker = document.getElementById('localVideoPicker');
+    if (picker) {
+      picker.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          window.changeDemoVideo(file.name, url);
+        }
+      });
+    }
+
+    // Tự động vẽ hoạt họa lofi nếu video gặp sự cố
+    const movieVideo = document.getElementById('moviePlayer');
+    const fallbackCanvas = document.getElementById('ambientFallbackCanvas');
+    if (movieVideo && fallbackCanvas) {
+      movieVideo.onerror = () => {
+        movieVideo.style.display = 'none';
+        fallbackCanvas.style.display = 'block';
+        startAmbientAnimation(fallbackCanvas);
+      };
+    }
+
+    function startAmbientAnimation(cvs) {
+      const c = cvs.getContext('2d');
+      cvs.width = cvs.parentElement.clientWidth || 600;
+      cvs.height = cvs.parentElement.clientHeight || 350;
+      let stars = Array.from({ length: 60 }, () => ({
+        x: Math.random() * cvs.width,
+        y: Math.random() * cvs.height,
+        r: Math.random() * 2,
+        alpha: Math.random()
+      }));
+
+      function draw() {
+        c.fillStyle = '#0a0e17';
+        c.fillRect(0, 0, cvs.width, cvs.height);
+        stars.forEach(s => {
+          c.fillStyle = `rgba(147, 197, 253, ${s.alpha})`;
+          c.beginPath();
+          c.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          c.fill();
+          s.alpha += (Math.random() - 0.5) * 0.05;
+          if (s.alpha < 0.2) s.alpha = 0.2;
+          if (s.alpha > 0.9) s.alpha = 0.9;
+        });
+        c.fillStyle = '#fbbf24';
+        c.font = 'bold 22px sans-serif';
+        c.textAlign = 'center';
+        c.fillText('✨ Cozy Cinema Chill Room ✨', cvs.width / 2, cvs.height / 2);
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
 
     // Bật tiếng khi click lần đầu
     document.addEventListener('click', () => {
