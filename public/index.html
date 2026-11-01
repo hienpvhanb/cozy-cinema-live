@@ -102,6 +102,7 @@
           <div class="projector-glow"></div>
           <div class="screen-frame">
             <video id="moviePlayer" src="../../Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4" autoplay loop muted playsinline></video>
+            <iframe id="youtubePlayer" style="display: none; width: 100%; height: 100%; border: none;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
             <!-- Canvas dự phòng khi chưa tải được video -->
             <canvas id="ambientFallbackCanvas" style="display: none; width: 100%; height: 100%;"></canvas>
           </div>
@@ -198,7 +199,14 @@
       </div>
 
       <div class="sim-card">
-        <h3>🎬 4. Đổi Video / MV Đang Chiếu</h3>
+        <h3>🎬 4. Đổi Video / Mở Trực Tiếp Từ Web</h3>
+        <div style="margin-bottom: 10px;">
+          <input type="text" id="demoWebUrl" placeholder="Dán link YouTube hoặc link mp4 web..." style="width: 100%; padding: 8px 10px; border-radius: 6px; background: #111827; border: 1px solid #374151; color: #fff; font-size: 13px; margin-bottom: 6px;">
+          <button class="sim-btn btn-blue" onclick="playDemoWebUrl()">🌐 Chiếu Từ Web (YouTube / Link)</button>
+        </div>
+        <button class="sim-btn btn-dark" onclick="changeDemoVideo('Lofi Girl 24/7 (YouTube)', 'https://www.youtube.com/watch?v=jfKfPfyJRdk')">
+          📻 Lofi Girl 24/7 Chill (YouTube)
+        </button>
         <button class="sim-btn btn-dark" onclick="changeDemoVideo('Camping Mưa Rừng ASMR', '../../Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4')">
           🌧️ Camping Mưa Rừng 15 Phút
         </button>
@@ -208,7 +216,7 @@
         <button class="sim-btn btn-dark" onclick="changeDemoVideo('MV Cảm Ơn Anh Vì Đã Từng', '../../MV_Julia_Cam_On_Anh_Vi_Da_Tung.mp4')">
           🎸 MV Cảm Ơn Anh Vì Đã Từng
         </button>
-        <label class="sim-btn btn-blue" style="cursor: pointer; margin-top: 6px;">
+        <label class="sim-btn btn-dark" style="cursor: pointer; margin-top: 6px;">
           📁 Chọn video khác từ máy tính...
           <input type="file" id="localVideoPicker" accept="video/*" style="display: none;">
         </label>
@@ -343,12 +351,40 @@
       updateCounter();
     };
 
+    function parseYouTubeId(url) {
+      if (!url) return null;
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
     window.changeDemoVideo = (title, src) => {
       const video = document.getElementById('moviePlayer');
+      const ytIframe = document.getElementById('youtubePlayer');
       const titleElem = document.getElementById('movieTitle');
       titleElem.textContent = title;
-      video.src = src;
-      video.play().catch(() => {});
+
+      const ytId = parseYouTubeId(src);
+      if (ytId) {
+        video.pause();
+        video.style.display = 'none';
+        ytIframe.style.display = 'block';
+        ytIframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=0&controls=0&loop=1&playlist=${ytId}`;
+      } else {
+        ytIframe.src = '';
+        ytIframe.style.display = 'none';
+        video.style.display = 'block';
+        video.src = src;
+        video.play().catch(() => {});
+      }
+    };
+
+    window.playDemoWebUrl = () => {
+      const input = document.getElementById('demoWebUrl');
+      const url = input.value.trim();
+      if (!url) return alert('Vui lòng nhập link YouTube hoặc link video web!');
+      const isYt = url.includes('youtube.com') || url.includes('youtu.be');
+      window.changeDemoVideo(isYt ? 'YouTube Live/Video' : 'Web Video Stream', url);
     };
 
     const picker = document.getElementById('localVideoPicker');

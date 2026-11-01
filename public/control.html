@@ -116,25 +116,65 @@
     </div>
 
     <!-- 3. Quản lý Phim & Video đang chiếu -->
-    <div class="card">
-      <div class="card-header">
-        🎬 3. ĐỔI NỘI DUNG CHIẾU TRÊN MÀN HÌNH RẠP
+    <div class="card border-info">
+      <div class="card-header text-info fw-bold">
+        🎬 3. NỘI DUNG CHIẾU RẠP (HỖ TRỢ MỞ TRỰC TIẾP TỪ WEB HOẶC TỪ MÁY)
       </div>
       <div class="card-body">
+        <!-- Dán link trực tiếp từ Web (YouTube, Link MP4, M3U8 online) -->
+        <div class="p-3 mb-3 rounded" style="background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(56, 189, 248, 0.4);">
+          <label class="form-label fw-bold text-light mb-1">🌐 Mở video trực tiếp từ Web (Không cần tải về máy):</label>
+          <div class="row g-2 mb-2">
+            <div class="col-md-7">
+              <input type="text" id="customMediaUrl" class="form-control bg-dark text-light border-secondary" placeholder="Dán link YouTube (ví dụ: https://www.youtube.com/watch?v=jfKfPfyJRdk) hoặc link file .mp4 trên web">
+            </div>
+            <div class="col-md-3">
+              <input type="text" id="customMediaTitle" class="form-control bg-dark text-light border-secondary" placeholder="Tên phim / bài hát">
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-info w-100 fw-bold" onclick="playCustomWebMedia()">▶️ Chiếu Ngay</button>
+            </div>
+          </div>
+          <small class="text-secondary d-block">
+            💡 <strong>Mẹo hay:</strong> Hỗ trợ link YouTube video, YouTube Live 24/7, link mp4 online. Hệ thống sẽ tự động nhúng và phát ngay trên màn hình OBS!
+          </small>
+        </div>
+
+        <!-- Các mẫu chọn nhanh Video Web & Video trong máy -->
+        <label class="form-label text-secondary fw-bold mb-2">⚡ Chọn nhanh các luồng phát thịnh hành:</label>
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <button class="btn btn-outline-info w-100 text-start btn-custom" onclick="changeMedia('Lofi Girl - Beats to relax/study to (24/7)', 'https://www.youtube.com/watch?v=jfKfPfyJRdk')">
+              📻 Lofi Girl Chill 24/7 (YouTube)
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-info w-100 text-start btn-custom" onclick="changeMedia('Synthwave Radio - Chill Beats', 'https://www.youtube.com/watch?v=4xDzrJKXOOY')">
+              🌆 Synthwave Chill Radio (YouTube)
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-outline-info w-100 text-start btn-custom" onclick="changeMedia('Nhạc Piano Mưa Rơi Thư Giãn', 'https://www.youtube.com/watch?v=lTRiuFIWV54')">
+              🎹 Piano & Mưa Rơi (YouTube)
+            </button>
+          </div>
+        </div>
+
+        <label class="form-label text-secondary fw-bold mb-2">📁 Hoặc chọn video có sẵn trong máy tính của bạn:</label>
         <div class="row g-2">
           <div class="col-md-4">
             <button class="btn btn-dark w-100 border-secondary text-start" onclick="changeMedia('Camping Mưa Rừng Chill ASMR 15 Phút', '/media/Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4')">
-              🌧️ Camping Mưa Rừng ASMR
+              🌧️ Camping Mưa Rừng ASMR (File máy)
             </button>
           </div>
           <div class="col-md-4">
             <button class="btn btn-dark w-100 border-secondary text-start" onclick="changeMedia('MV Giá Mà Hôm Ấy (Phong Cảnh Lyrics)', '/media/MV_Gia_Ma_Hom_Ay_Phong_Canh_Lyrics.mp4')">
-              🎵 MV Giá Mà Hôm Ấy (Lyrics)
+              🎵 MV Giá Mà Hôm Ấy (File máy)
             </button>
           </div>
           <div class="col-md-4">
             <button class="btn btn-dark w-100 border-secondary text-start" onclick="changeMedia('MV Cảm Ơn Anh Vì Đã Từng', '/media/MV_Julia_Cam_On_Anh_Vi_Da_Tung.mp4')">
-              🎸 MV Cảm Ơn Anh Vì Đã Từng
+              🎸 MV Cảm Ơn Anh Vì Đã Từng (File máy)
             </button>
           </div>
         </div>
@@ -208,6 +248,25 @@
         type: 'CHANGE_MEDIA',
         payload: { title, src }
       }));
+    }
+
+    function playCustomWebMedia() {
+      const urlInput = document.getElementById('customMediaUrl');
+      const titleInput = document.getElementById('customMediaTitle');
+      const url = urlInput.value.trim();
+      let title = titleInput.value.trim();
+
+      if (!url) {
+        alert('Vui lòng dán link video YouTube hoặc link web MP4!');
+        return;
+      }
+
+      if (!title) {
+        title = url.includes('youtube.com') || url.includes('youtu.be') ? 'YouTube Chill Stream' : 'Web Video Stream';
+      }
+
+      changeMedia(title, url);
+      alert(`Đã gửi lệnh chiếu: "${title}" lên màn hình rạp!`);
     }
   </script>
 </body>

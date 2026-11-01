@@ -29,6 +29,7 @@
       <div class="projector-glow"></div>
       <div class="screen-frame">
         <video id="moviePlayer" src="/media/Julia_Camping_Mua_Rung_ASMR_15Phut_9x16.mp4" autoplay loop muted playsinline></video>
+        <iframe id="youtubePlayer" style="display: none; width: 100%; height: 100%; border: none;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
       </div>
       <div class="screen-meta">
         <div class="now-playing-pill">
@@ -77,8 +78,37 @@
     engine.startRenderLoop();
 
     const moviePlayer = document.getElementById('moviePlayer');
+    const youtubePlayer = document.getElementById('youtubePlayer');
     const movieTitle = document.getElementById('movieTitle');
     const giftPopup = document.getElementById('giftPopup');
+
+    function parseYouTubeId(url) {
+      if (!url) return null;
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    function applyMedia(media) {
+      if (!media || !media.src) return;
+      movieTitle.textContent = media.title || 'Đang Chiếu';
+
+      const ytId = parseYouTubeId(media.src);
+      if (ytId) {
+        // Dạng YouTube Embed
+        moviePlayer.pause();
+        moviePlayer.style.display = 'none';
+        youtubePlayer.style.display = 'block';
+        youtubePlayer.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=0&controls=0&loop=1&playlist=${ytId}&enablejsapi=1`;
+      } else {
+        // Dạng Video MP4/Web trực tiếp hoặc file cục bộ
+        youtubePlayer.src = '';
+        youtubePlayer.style.display = 'none';
+        moviePlayer.style.display = 'block';
+        moviePlayer.src = media.src;
+        moviePlayer.play().catch(() => {});
+      }
+    }
     const giftSender = document.getElementById('giftSender');
     const giftMessage = document.getElementById('giftMessage');
     const liveStatusText = document.getElementById('liveStatusText');
@@ -100,8 +130,7 @@
         if (data.type === 'INIT_STATE') {
           engine.setSeats(data.payload.seats);
           if (data.payload.nowPlaying) {
-            movieTitle.textContent = data.payload.nowPlaying.title;
-            if (data.payload.nowPlaying.src) moviePlayer.src = data.payload.nowPlaying.src;
+            applyMedia(data.payload.nowPlaying);
           }
         } 
         else if (data.type === 'SEAT_UPDATE') {
@@ -132,8 +161,7 @@
           }
         } 
         else if (data.type === 'MEDIA_CHANGED') {
-          movieTitle.textContent = data.payload.title;
-          if (data.payload.src) moviePlayer.src = data.payload.src;
+          applyMedia(data.payload);
         } 
         else if (data.type === 'SEATS_RESET') {
           engine.setSeats(data.payload);
